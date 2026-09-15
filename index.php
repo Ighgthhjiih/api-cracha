@@ -1,50 +1,154 @@
 <?php
-header("Content-Type: application/json");
 
-include_once('config.php');
+header("Content-Type: application/json; charset=utf-8");
 
-if(isset($_GET['tipo']) && $_GET['tipo']=="buscar"){
-    $rm=$_POST['rm'];
- $resultado = $conexao->prepare('Select * from alunos where rm=?');
- $resultado->bind_param('i',$rm);
-   
-    while ($linha = $resultado->fetch_assoc()) {
-        $alunos= $linha;
+include_once("config.php");
+
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_GET["tipo"]) && $_GET["tipo"] === "cadastrar") {
+
+    $nome = $_POST["nome"] ?? null;
+    $rm = $_POST["rm"] ?? null;
+    $curso = $_POST["curso"] ?? null;
+    $nascimento = $_POST["dt_nascimento"] ?? null;
+
+    if (!$nome || !$rm || !$curso || !$nascimento) {
+        echo json_encode([
+            "sucesso" => false,
+            "mensagem" => "Dados obrigatórios não recebidos.",
+            "dados_recebidos" => [
+                "nome" => $nome,
+                "rm" => $rm,
+                "curso" => $curso,
+                "dt_nascimento" => $nascimento
+            ]
+        ]);
+        exit;
     }
 
-    echo json_encode([
-        "sucesso" => true,
-        "alunos" => $alunos
-    ]);
-}
-else if(isset($_GET['tipo']) && $_GET['tipo']=="cadastrar"){
-$nome=$_POST['nome'];
-$rm=$_POST['rm'];
-$curso=$_POST['curso'];
-$nascimento=$_POST['dt_nascimento'];
-if (isset($_FILES['imagem'])) {
-    $arquivo = $_FILES['imagem'];
-    $nomearquivo = uniqid() . '.jpg';
-    $pasta = 'uploads/';
-    if (!is_dir($pasta)) {
-        mkdir($pasta, 0777, true);
+    $caminho = null;
+
+    if (isset($_FILES["imagem"]) && $_FILES["imagem"]["error"] === UPLOAD_ERR_OK) {
+
+        $arquivo = $_FILES["imagem"];
+
+        $extensao = pathinfo(
+            $arquivo["name"],
+            PATHINFO_EXTENSION
+        );
+
+        $nomeArquivo = uniqid() . "." . $extensao;
+
+        $pasta = __DIR__ . "/uploads/";
+
+        if (!is_dir($pasta)) {
+            mkdir($pasta, 0777, true);
+        }
+
+        $destino = $pasta . $nomeArquivo;
+
+        if (!move_uploaded_file(
+            $arquivo["tmp_name"],
+            $destino
+        )) {
+            echo json_encode([
+                "sucesso" => false,
+                "mensagem" => "Não foi possível salvar a imagem."
+            ]);
+            exit;
+        }
+
+        $caminho = "uploads/" . $nomeArquivo;
     }
-    move_uploaded_file(
-        $arquivo['tmp_name'],
-        $pasta . $nomearquivo
+
+    $sql = "INSERT INTO alunos 
+            (nome, rm, curso, dt_nascimento, imagem)
+            VALUES (?, ?, ?, ?, ?)";
+
+    $stmt = $conexao->prepare($sql);
+
+    if (!$stmt) {
+        echo json_encode([
+            "sucesso" => false,
+            "mensagem" => "Erro ao preparar cadastro.",
+            "erro" => $conexao->error
+        ]);
+        exit;
+    }
+
+    $stmt->bind_param(
+        "sisss",
+        $nome,
+        $rm,
+        $curso,
+        $nascimento,
+        $caminho
     );
-    $caminho=$pasta+$nomeArquivo;
-}
-$enviar=$conexao->prepare('INSERT INTO alunos (nome, rm, curso, dt_nascimento, imagem) VALUES (?, ?, ?, ?, ?)');
 
-$enviar->bind_param( 'sisss', $nome,$rm,$curso,$nascimento,$caminho);
-
-    if ($enviar->execute()) {
+    if ($stmt->execute()) {
 
         echo json_encode([
             "sucesso" => true,
-            "mensagem" => "Aluno cadastrado com sucesso"
+            "mensagem" => "Aluno cadastrado com sucesso!",
+            "id" => $stmt->insert_id,
+            "imagem" => $caminho
         ]);
+
+    } else {
+
+        echo json_encode([
+            "sucesso" => false,
+            "mensagem" => "Erro ao cadastrar aluno.",
+            "erro" => $stmt->error
+        ]);
+    }
+
+    $stmt->close();
+    exit;
 }
+
+
+if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET["tipo"]) && $_GET["tipo"] === "buscar") {
+
+    $rm = $_GET["rm"] ?? null;
+
+    if (!$rm) {
+        echo json_encode([
+            "sucesso" => false,
+            "mensagem" => "RM não informado."
+        ]);
+        exit;
+    }
+
+    $stmt = $conexao->prepare(
+        "SELECT * FROM alunos WHERE rm = ?"
+    );
+
+    $stmt->bind_param("i", $rm);
+    $stmt->execute();
+
+    $resultado = $stmt->get_result();
+
+    if ($aluno = $resultado->fetch_assoc()) {
+
+        echo json_encode([
+            "sucesso" => true,
+            "aluno" => $aluno
+        ]);
+
+    } else {
+
+        echo json_encode([
+            "sucesso" => false,
+            "mensagem" => "Aluno não encontrado."
+        ]);
+    }
+
+    $stmt->close();
+    exit;
 }
-?>
+
+
+echo json_encode([
+    "sucesso" => false,
+    "mensagem" => "Tipo de requisição inválido."
+]);
