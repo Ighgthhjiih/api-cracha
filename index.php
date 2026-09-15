@@ -16,21 +16,20 @@ if (isset($_GET["tipo"]) && $_GET["tipo"] === "cadastrar") {
     $caminho = null;
 
     if (isset($_FILES["imagem"]) && $_FILES["imagem"]["error"] === UPLOAD_ERR_OK) {
-
-        $arquivo = $_FILES["imagem"];
-
-    
-        $nomearquivo = uniqid() . "." . $extensao;
-
-        $pasta = "/uploads/";
-
-        if (!is_dir($pasta)) {
-            mkdir($pasta, 0777, true);
-        }
-
-        $destino = $pasta . $nomeArquivo;
         
-        $caminho = "uploads/" . $nomeArquivo;
+        $nomeArquivo = uniqid() . ".jpg";
+$pasta = __DIR__ . "/uploads/";
+
+if (!is_dir($pasta)) {
+    mkdir($pasta);
+}
+
+move_uploaded_file(
+    $_FILES["imagem"]["tmp_name"],
+    $pasta . $nomeArquivo
+);
+
+$caminho = "uploads/" . $nomeArquivo;
     }
 
     $sql = "INSERT INTO alunos  (nome, rm, curso, dt_nascimento, imagem) VALUES (?, ?, ?, ?, ?)";
