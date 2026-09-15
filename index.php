@@ -29,34 +29,24 @@ if (isset($_GET["tipo"]) && $_GET["tipo"] === "cadastrar") {
         }
 
         $destino = $pasta . $nomeArquivo;
-
         
         $caminho = "uploads/" . $nomeArquivo;
     }
 
-    $sql = "INSERT INTO alunos 
-            (nome, rm, curso, dt_nascimento, imagem)
-            VALUES (?, ?, ?, ?, ?)";
+    $sql = "INSERT INTO alunos  (nome, rm, curso, dt_nascimento, imagem) VALUES (?, ?, ?, ?, ?)";
 
     $stmt = $conexao->prepare($sql);
 
     if (!$stmt) {
         echo json_encode([
             "sucesso" => false,
-            "mensagem" => "Erro ao preparar cadastro.",
+            "mensagem" => "Erro ao cadastrar.",
             "erro" => $conexao->error
         ]);
         exit;
     }
 
-    $stmt->bind_param(
-        "sisss",
-        $nome,
-        $rm,
-        $curso,
-        $nascimento,
-        $caminho
-    );
+    $stmt->bind_param( "sisss", $nome,$rm,$curso,$nascimento,$caminho );
 
     if ($stmt->execute()) {
 
