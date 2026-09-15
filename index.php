@@ -4,26 +4,14 @@ header("Content-Type: application/json; charset=utf-8");
 
 include_once("config.php");
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_GET["tipo"]) && $_GET["tipo"] === "cadastrar") {
+if (isset($_GET["tipo"]) && $_GET["tipo"] === "cadastrar") {
 
-    $nome = $_POST["nome"] ?? null;
-    $rm = $_POST["rm"] ?? null;
-    $curso = $_POST["curso"] ?? null;
-    $nascimento = $_POST["dt_nascimento"] ?? null;
+    $nome = $_POST["nome"] ;
+    $rm = $_POST["rm"] ;
+    $curso = $_POST["curso"] ;
+    $nascimento = $_POST["dt_nascimento"] ;
 
-    if (!$nome || !$rm || !$curso || !$nascimento) {
-        echo json_encode([
-            "sucesso" => false,
-            "mensagem" => "Dados obrigatórios não recebidos.",
-            "dados_recebidos" => [
-                "nome" => $nome,
-                "rm" => $rm,
-                "curso" => $curso,
-                "dt_nascimento" => $nascimento
-            ]
-        ]);
-        exit;
-    }
+  
 
     $caminho = null;
 
@@ -31,14 +19,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_GET["tipo"]) && $_GET["tipo
 
         $arquivo = $_FILES["imagem"];
 
-        $extensao = pathinfo(
-            $arquivo["name"],
-            PATHINFO_EXTENSION
-        );
+    
+        $nomearquivo = uniqid() . "." . $extensao;
 
-        $nomeArquivo = uniqid() . "." . $extensao;
-
-        $pasta = __DIR__ . "/uploads/";
+        $pasta = "/uploads/";
 
         if (!is_dir($pasta)) {
             mkdir($pasta, 0777, true);
@@ -46,17 +30,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_GET["tipo"]) && $_GET["tipo
 
         $destino = $pasta . $nomeArquivo;
 
-        if (!move_uploaded_file(
-            $arquivo["tmp_name"],
-            $destino
-        )) {
-            echo json_encode([
-                "sucesso" => false,
-                "mensagem" => "Não foi possível salvar a imagem."
-            ]);
-            exit;
-        }
-
+        
         $caminho = "uploads/" . $nomeArquivo;
     }
 
