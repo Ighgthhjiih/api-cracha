@@ -15,14 +15,10 @@ if (isset($_GET["tipo"]) && $_GET["tipo"] === "cadastrar") {
 
     $caminho = null;
 
-    if (isset($_FILES["imagem"]) && $_FILES["imagem"]["error"] === UPLOAD_ERR_OK) {
+    if (isset($_FILES["imagem"])) {
         
         $nomeArquivo = uniqid() . ".jpg";
-$pasta = __DIR__ . "/uploads/";
-
-if (!is_dir($pasta)) {
-    mkdir($pasta);
-}
+$pasta= "/uploads/";
 
 move_uploaded_file(
     $_FILES["imagem"]["tmp_name"],
@@ -34,20 +30,13 @@ $caminho = "uploads/" . $nomeArquivo;
 
     $sql = "INSERT INTO alunos  (nome, rm, curso, dt_nascimento, imagem) VALUES (?, ?, ?, ?, ?)";
 
-    $stmt = $conexao->prepare($sql);
+    $enviar = $conexao->prepare($sql);
 
-    if (!$stmt) {
-        echo json_encode([
-            "sucesso" => false,
-            "mensagem" => "Erro ao cadastrar.",
-            "erro" => $conexao->error
-        ]);
-        exit;
-    }
+   
 
-    $stmt->bind_param( "sisss", $nome,$rm,$curso,$nascimento,$caminho );
+    $enviar->bind_param( "sisss", $nome,$rm,$curso,$nascimento,$caminho );
 
-    if ($stmt->execute()) {
+    if ($enviar->execute()) {
 
         echo json_encode([
             "sucesso" => true,
