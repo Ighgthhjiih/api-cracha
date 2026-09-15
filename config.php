@@ -12,7 +12,7 @@ mysqli_ssl_set(
     $conexao,
     null,
     null,
-    __DIR__ . "./ca.pem",
+    __DIR__ . "/ca.pem",
     null,
     null
 );
